@@ -275,7 +275,7 @@ int main(int argc,char **argv)
 //    stbi_write_jpg("cutimg.jpg", x / 2, y / 2, 3, cutdata, 100);
     Timer t2;
 //    uint8_t* enlarged_data = enlarge_2x(cutdata, x / 2, y / 2, n);
-//    cout<<"time taken for enlarging with linear splines: "<< t2.elapsed()<< endl; // 0. 46, 0.28, 0.37, 0.35
+//    cout<<"time taken for enlarging with linear splines: "<< t2.elapsed()<< endl; // 0. 46, 0.28, 0.37, 0.35, размер (1382 X 1808)
 //    stbi_write_jpg("enlargedimg1.jpg", x, y, 3, enlarged_data, 100);
     uint8_t* enlarged_data2 = enlarge2x_third_order(cutdata, x / 2, y / 2, n);
     cout<<"time taken for enlarging with square splines: "<< t2.elapsed()<< endl;
