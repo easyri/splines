@@ -94,9 +94,9 @@ function cubic_spline_interpolate(img, parity)
                     elseif j+3 > size(ret)[2]
                         ret[i,j] = 0.5*ret[i,j+1] + 0.5*ret[i,j-1]
                     else
-                        ret[i,j] = RGB(min(0.375*ret[i,j-1].r + 0.75*ret[i,j+1].r + 0.125*ret[i,j+3].r,1),
-                        min(0.375*ret[i,j-1].g + 0.75*ret[i,j+1].g + 0.125*ret[i,j+3].g,1),
-                        min(0.375*ret[i,j-1].b + 0.75*ret[i,j+1].b + 0.125*ret[i,j+3].b,1))
+                        ret[i,j] = RGB(min(abs(0.375*ret[i,j-1].r + 0.75*ret[i,j+1].r - 0.125*ret[i,j+3].r),1),
+                        min(abs(0.375*ret[i,j-1].g + 0.75*ret[i,j+1].g - 0.125*ret[i,j+3].g),1),
+                        min(abs(0.375*ret[i,j-1].b + 0.75*ret[i,j+1].b - 0.125*ret[i,j+3].b),1))
                     end
                 else
                     if j == 1
@@ -106,9 +106,9 @@ function cubic_spline_interpolate(img, parity)
                     elseif j-3 < 1
                         ret[i,j] = 0.5*ret[i,j+1] + 0.5*ret[i,j-1]
                     else
-                        ret[i,j] = RGB(min(0.375*ret[i,j+1].r + 0.75*ret[i,j-1].r + 0.125*ret[i,j-3].r,1),
-                        min(0.375*ret[i,j+1].g + 0.75*ret[i,j-1].g + 0.125*ret[i,j-3].g,1),
-                        min(0.375*ret[i,j+1].b + 0.75*ret[i,j-1].b + 0.125*ret[i,j-3].b,1))
+                        ret[i,j] = RGB(min(abs(0.375*ret[i,j+1].r + 0.75*ret[i,j-1].r - 0.125*ret[i,j-3].r),1),
+                        min(abs(0.375*ret[i,j+1].g + 0.75*ret[i,j-1].g - 0.125*ret[i,j-3].g),1),
+                        min(abs(0.375*ret[i,j+1].b + 0.75*ret[i,j-1].b - 0.125*ret[i,j-3].b),1))
                     end
                 end
             end
@@ -125,9 +125,9 @@ function cubic_spline_interpolate(img, parity)
                     elseif i+3 > size(ret)[1]
                         ret[i,j] = 0.5*ret[i+1,j] + 0.5*ret[i-1,j]
                     else
-                        ret[i,j] = RGB(min(0.375*ret[i-1,j].r + 0.75*ret[i+1,j].r + 0.125*ret[i+3,j].r,1),
-                        min(0.375*ret[i-1,j].g + 0.75*ret[i+1,j].g + 0.125*ret[i+3,j].g,1),
-                        min(0.375*ret[i-1,j].b + 0.75*ret[i+1,j].b + 0.125*ret[i+3,j].b,1))
+                        ret[i,j] = RGB(min(abs(0.375*ret[i-1,j].r + 0.75*ret[i+1,j].r - 0.125*ret[i+3,j].r),1),
+                        min(abs(0.375*ret[i-1,j].g + 0.75*ret[i+1,j].g - 0.125*ret[i+3,j].g),1),
+                        min(abs(0.375*ret[i-1,j].b + 0.75*ret[i+1,j].b - 0.125*ret[i+3,j].b),1))
                     end
                 else
                     if i == 1
@@ -137,9 +137,9 @@ function cubic_spline_interpolate(img, parity)
                     elseif i-3 < 1
                         ret[i,j] = 0.5*ret[i+1,j] + 0.5*ret[i-1,j]
                     else
-                        ret[i,j] = RGB(min(0.375*ret[i+1,j].r + 0.75*ret[i-1,j].r + 0.125*ret[i-3,j].r,1),
-                        min(0.375*ret[i+1,j].g + 0.75*ret[i-1,j].g + 0.125*ret[i-3,j].g,1),
-                        min(0.375*ret[i+1,j].b + 0.75*ret[i-1,j].b + 0.125*ret[i-3,j].b,1))
+                        ret[i,j] = RGB(min(abs(0.375*ret[i+1,j].r + 0.75*ret[i-1,j].r - 0.125*ret[i-3,j].r),1),
+                        min(abs(0.375*ret[i+1,j].g + 0.75*ret[i-1,j].g - 0.125*ret[i-3,j].g),1),
+                        min(abs(0.375*ret[i+1,j].b + 0.75*ret[i-1,j].b - 0.125*ret[i-3,j].b),1))
                     end
                 end
             end
@@ -152,6 +152,6 @@ end
 img = load("Workspace/conc/img.JPG")
 cut = image_cut(img)
 #linear = linear_spline_interpolate(cut,0)
-trigo = trigonometric_spline_interpolate(cut,0)
+#trigo = trigonometric_spline_interpolate(cut,0)
 #cub = cubic_spline_interpolate(cut,0)
-save("linear.jpg",trigo)
+#save("cub.jpg",cub)
