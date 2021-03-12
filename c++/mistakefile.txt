@@ -18,3 +18,6 @@ string_average_red_mistake, string_average_green_mistake, string_average_blue_mi
 string_pixel_mistake: 5.19537
 row_average_red_mistake, row_average_green_mistake, row_average_blue_mistake: 2.08394 1.0275 2.2576
 row_pixel_mistake: 5.36903
+
+average linear = 3.77
+average square = 5.28
