@@ -10,4 +10,4 @@ time taken for parallel enlarging with linear splines: 0.327522
 time taken for parallel enlarging with square splines: 0.563434
 
 average linear = 0.274
-average parallel = 0.562
+average square = 0.562
