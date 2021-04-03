@@ -1,5 +1,4 @@
-
-#include "stdafx.h"
+п»ї// #include "stdafx.h"
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -10,13 +9,14 @@
 #include <vector>
 #include <algorithm>
 #include <thread>
+#include <functional>
 
 extern "C" {
 #define STB_IMAGE_IMPLEMENTATION
-#include "c:\Users\belyn\uimages\stb_image.h"
+#include "C:\Users\anke\splines\stb_image.h"
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "c:\Users\belyn\uimages\stb_image_write.h"
+#include "C:\Users\anke\splines\stb_image_write.h"
 }
 
 using namespace std;
@@ -73,9 +73,9 @@ float u(float x, float xj, float xj1, float uj, float uj1) {
 	return (uj1 - uj) * (x - xj) / (xj1 - xj) + uj;
 }
 
-void linear_parallel_enlarge(uint8_t *cutdata, int width, int height,
-									int n, int part,  uint8_t *data) {
-	
+void linear_parallel_enlarge(uint8_t* cutdata, int width, int height,
+	int n, int part, uint8_t* data) {
+
 	int j = width * height * n * part;
 	int i = width * height * n / 4 * part; // width * height * n / 4, width * height * n / 2, width * height * n * 3 / 4,
 	int end_i = i + width * height * n / 4; // width * height * n / 2, width * height * n * 3 / 4, width * height * n,
@@ -83,7 +83,7 @@ void linear_parallel_enlarge(uint8_t *cutdata, int width, int height,
 		int k = 0;
 		int s = 0;
 		while (k < width * n) {
-			data [j + s] = cutdata[i + k];
+			data[j + s] = cutdata[i + k];
 			data[j + s + 1] = cutdata[i + k + 1];
 			data[j + s + 2] = cutdata[i + k + 2];
 			k += 3;
@@ -94,7 +94,7 @@ void linear_parallel_enlarge(uint8_t *cutdata, int width, int height,
 	}
 	for (int channel = 0; channel < n; ++channel) {
 		i = width * height * n * part;
-		end_i = i +  width * height * n;
+		end_i = i + width * height * n;
 		while (i < end_i) {
 			int j = n;
 			while (j < 2 * width * n - 3) {
@@ -136,22 +136,23 @@ void linear_parallel_enlarge(uint8_t *cutdata, int width, int height,
 					data[i + actual_width * (j - 2) + channel]));
 				if (res > 255) res = 255;
 				data[i + actual_width * j + channel] = (uint8_t)(res);
-				
+
 			}
 			i += n;
-			
+
 		}
-		
+
 	}
 
 }
 
 
-uint8_t* enlarge_2x(uint8_t* cutdata, int width, int height, int n) {	// линейное 
+
+uint8_t* enlarge_2x(uint8_t* cutdata, int width, int height, int n) {	// Р»РёРЅРµР№РЅРѕРµ 
 	uint8_t* data = new uint8_t[width * 2 * height * 2 * n];
 	int i = 0;
 	int j = 0;
-	while (i < width * height * n) { 
+	while (i < width * height * n) {
 		int k = 0;
 		int s = 0;
 		while (k < width * n) {
@@ -360,29 +361,247 @@ void third_order_parallel_enlarge(uint8_t* cutdata, int width, int height,
 	}
 }
 
-uint8_t* enlarge_parallel(uint8_t* cutdata, int width, int height, int n, int method) {
+void linear_parallel_enlarge_threads(uint8_t* cutdata, int width, int height,
+	int n, int part, int th, uint8_t* data) {
+	int num = height / th;
+	if (num % 2 == 1) num -= 1;
+	int i = width * n * part * num; // width * height * n / 4, width * height * n / 2, width * height * n * 3 / 4,
+	int end_i = i + width * n * num; // width * height * n / 2, width * height * n * 3 / 4, width * height * n,
+	if (part == th - 1) end_i = width * height * n;
+	int j = i * 4;
+	while (i < end_i) {
+		int k = 0;
+		int s = 0;
+		while (k < width * n) {
+			data[j + s] = cutdata[i + k];
+			data[j + s + 1] = cutdata[i + k + 1];
+			data[j + s + 2] = cutdata[i + k + 2];
+			k += 3;
+			s += 6;
+		}
+		i += width * n;
+		j += 4 * width * n;
+	}
+	for (int channel = 0; channel < n; ++channel) {
+		i = width * n * 4 * part * num;
+		end_i = width * n * 4 * (part + 1) * num;
+		if (part == th - 1) end_i = width * height * n * 4;
+
+		while (i < end_i) {
+			int j = n;
+			while (j < 2 * width * n - 3) {
+				float res = abs(u(j, j - 1, j + 1,
+					data[i + j - n + channel],
+					data[i + j + n + channel]));
+				if (res > 255) res = 255;
+				data[i + j + channel] = (uint8_t)(res);
+				j += n * 2;
+			}
+			if (j == 2 * width * n - 3) {
+				float res = abs(u(j, j - 1, j - 2,
+					data[i + j - n + channel],
+					data[i + j - 2 * n + channel]));
+				if (res > 255) res = 255;
+				data[i + j + channel] = (uint8_t)(res);
+			}
+
+			i += width * 4 * n;
+		}
+	}
+	for (int channel = 0; channel < n; ++channel) {
+		int actual_width = 2 * width * n;
+		i = 0;
+		while (i <= actual_width - 1) {
+			j = num * part * 2 + 1;
+			int end_j = num * 2 * (part + 1) - 1;
+			if (part == th - 1) end_j = height * 2 - 1;
+			//j = 1, 2 * height / 4 + 1, 4 * height / 4 + 1, 6 * height / 4 + 1
+			while (j < end_j) {
+				float res = abs(u(j, j - 1, j + 1,
+					data[i + actual_width * (j - 1) + channel],
+					data[i + actual_width * (j + 1) + channel]));
+				if (res > 255) res = 255;
+				data[i + actual_width * j + channel] = (uint8_t)(res);
+				j += 2;
+			}
+			if (j == end_j) {
+				float res = abs(u(j, j - 1, j - 2,
+					data[i + actual_width * (j - 1) + channel],
+					data[i + actual_width * (j - 2) + channel]));
+				if (res > 255) res = 255;
+				data[i + actual_width * j + channel] = (uint8_t)(res);
+			}
+			i += n;
+
+		}
+
+	}
+
+}
+
+
+void third_order_parallel_enlarge_threads(uint8_t* cutdata, int width, int height,
+	int n, int part, int th, uint8_t* data) {
+	int num = height / th;
+	if (num % 2 == 1) num -= 1;
+	int i = width * n * part * num; 
+	int end_i = i + width * n * num;
+	if (part == th - 1) end_i = width * height * n;
+	int j = i * 4;
+	while (i < end_i) {
+		int k = 0;
+		int s = 0;
+		while (k < width * n) {
+			data[j + s] = cutdata[i + k];
+			data[j + s + 1] = cutdata[i + k + 1];
+			data[j + s + 2] = cutdata[i + k + 2];
+			k += 3;
+			s += 6;
+		}
+		i += width * n;
+		j += 4 * width * n;
+	}
+	for (int channel = 0; channel < n; ++channel) {
+		i = width * n * 4 * part * num;
+		end_i = width * n * 4 * (part + 1) * num;
+		if (part == th - 1) end_i = width * height * n * 4;
+		while (i < end_i) {
+			int j = n;
+			while (j < width * n) {
+				float res = abs(left_u(j, j - 1, j + 1, j + 2,
+					data[i + j - n + channel],
+					data[i + j + n + channel],
+					data[i + j + 3 * n + channel]));
+				if (res > 255) res = 255;
+				data[i + j + channel] = (uint8_t)(res);
+				j += n * 2;
+			}
+			while (j < width * 2 * n - 3) {
+				float res = abs(right_u(j, j - 1, j + 1, j - 2,
+					data[i + j - n + channel],
+					data[i + j + n + channel],
+					data[i + j - 3 * n + channel]));
+				if (res > 255) res = 255;
+				data[i + j + channel] = (uint8_t)(res);
+				j += n * 2;
+			}
+			if (j == 2 * width * n - 3) {
+				float res = abs(u(j, j - 1, j - 2,
+					data[i + j - n + channel],
+					data[i + j - 2 * n + channel]));
+				if (res > 255) res = 255;
+				data[i + j + channel] = (uint8_t)(res);
+			}
+			i += width * 4 * n;
+		}
+	}
+	for (int channel = 0; channel < n; ++channel) {
+		int actual_width = width * n * 2;
+		i = 0;
+		while (i < actual_width - 1) {
+			j = num * part * 2 + 1;
+			int end_j = num * 2 * (part + 1) - 1;
+			if (part == th - 1) end_j = height * 2 - 1;
+			while (j < num * 2 * (part + 1) / 2) {
+				float res = abs(left_u(j, j - 1, j + 1, j + 2,
+					data[i + actual_width * (j - 1) + channel],
+					data[i + actual_width * (j + 1) + channel],
+					data[i + actual_width * (j + 3) + channel]));
+				if (res > 255) res = 255;
+				data[i + actual_width * j + channel] = (uint8_t)(res);
+				j += 2;
+			}
+			while (j < end_j) {
+				float res = abs(right_u(j, j - 1, j + 1, j - 2,
+					data[i + actual_width * (j - 1) + channel],
+					data[i + actual_width * (j + 1) + channel],
+					data[i + actual_width * (j - 3) + channel]));
+				if (res > 255) res = 255;
+				data[i + actual_width * j + channel] = (uint8_t)(res);
+				j += 2;
+			}
+			if (j == end_j) {
+				float res = abs(u(j, j - 1, j - 2,
+					data[i + actual_width * (j - 1) + channel],
+					data[i + actual_width * (j - 2) + channel]));
+				if (res > 255) res = 255;
+				data[i + actual_width * j + channel] = (uint8_t)(res);
+			}
+			i += n;
+		}
+	}
+}
+
+uint8_t* enlarge_parallel(uint8_t* cutdata, int width, int height, int n, int method, int th) {
 	uint8_t* data = new uint8_t[width * 2 * height * 2 * n];
-	vector<uint8_t*> data_parts;
+	
 	vector<thread> threads;
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < th; ++i) {
 		if (method == 1) {
-			threads.push_back(thread(linear_parallel_enlarge, ref(cutdata),
-				width, height, n, i, ref(data)));
+			threads.push_back(thread(linear_parallel_enlarge_threads, ref(cutdata),
+				width, height, n, i, th, ref(data)));
 		}
 		if (method == 2) {
-			threads.push_back(thread(third_order_parallel_enlarge, ref(cutdata),
-				width, height, n, i, ref(data)));
+			threads.push_back(thread(third_order_parallel_enlarge_threads, ref(cutdata),
+				width, height, n, i, th, ref(data)));
 		}
 	}
 	for_each(threads.begin(), threads.end(), mem_fn(&std::thread::join));
 	return data;
 }
 
+
+
+void save_pics() {
+	std::string filename = "C:\\Users\\anke\\splines\\vincent-van-gogh_road-with-cypresses-1890.jpg";
+	int x, y, n;
+	unsigned char* data = stbi_load(filename.c_str(), &x, &y, &n, 0);
+	cout << x << " " << y << " " << n << endl;
+	uint8_t* dataint = (uint8_t*)data;
+	uint8_t* cutdata = cut2x(data, x, y, n);
+	int width = x / 2;
+	int height = y / 2;
+	for (int i = 1; i < 17; ++i) {
+		string img_file = "parallel_square" + to_string(i) + ".jpg";
+		uint8_t* enlarged_data = enlarge_parallel(cutdata, x / 2, y / 2, n, 2, i);
+		stbi_write_jpg(img_file.c_str(), x, y, 3, enlarged_data, 100);
+		delete enlarged_data;
+	}
+}
+
+void thread_test()
+{
+	std::string filename = "C:\\Users\\anke\\splines\\vincent-van-gogh_road-with-cypresses-1890.jpg";
+	int x, y, n;
+	unsigned char* data = stbi_load(filename.c_str(), &x, &y, &n, 0);
+	cout << x << " " << y << " " << n << endl;
+	uint8_t* dataint = (uint8_t*)data;
+	uint8_t* cutdata = cut2x(data, x, y, n);
+	int width = x / 2;
+	int height = y / 2;
+	ofstream outf("square_parallel_timefile_n.txt");
+	for (int i = 1; i < 17; ++i) {
+		float average_time = 0;
+		for (int j = 0; j < 20; ++j) {
+			float t;
+			Timer t1;
+			uint8_t* enlarged_data = enlarge_parallel(cutdata, x / 2, y / 2, n, 2, i);
+			t = t1.elapsed();
+			average_time += t;
+			outf << "time taken for parallel enlarging with square splines with " << i << " threads: " << t << endl;
+			delete enlarged_data;
+		}
+		average_time /= 20;
+		outf << "average time taken for parallel enlarging with square splines with " << i << " threads: " << average_time << endl;
+		cout << "average time taken for parallel enlarging with square splines with " << i << " threads: " << average_time << endl;
+	}
+}
+
 uint8_t* enlarge2x_third_order(uint8_t* cutdata, int width, int height, int n) {
 	uint8_t* data = new uint8_t[width * 2 * height * 2 * n];
 	int i = 0;
 	int j = 0;
-	while (i < width * height * n) { // восстанавливаем имеющиеся пиксели
+	while (i < width * height * n) { // РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј РёРјРµСЋС‰РёРµСЃСЏ РїРёРєСЃРµР»Рё
 		int k = 0;
 		int s = 0;
 		while (k < width * n) {
@@ -465,16 +684,16 @@ uint8_t* enlarge2x_third_order(uint8_t* cutdata, int width, int height, int n) {
 }
 
 void test() {
-	
-	int x, y, n;std::string filename = "C:\\Users\\belyn\\uimages\\vincent-van-gogh_road-with-cypresses-1890.jpg";
-	unsigned char *data = stbi_load(filename.c_str(), &x, &y, &n, 0);
+
+	int x, y, n; std::string filename = "C:\\Users\\anke\\splines\\vincent-van-gogh_road-with-cypresses-1890.jpg";
+	unsigned char* data = stbi_load(filename.c_str(), &x, &y, &n, 0);
 	cout << x << " " << y << " " << n << endl;
 	uint8_t* dataint = (uint8_t*)data;
 	uint8_t* cutdata = cut2x(data, x, y, n);
 	int width = x / 2;
 	int height = y / 2;
 	ofstream outf("simple_timefile.txt");
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 0; i < 1; ++i) {
 		Timer t1;
 		uint8_t* enlarged_data = enlarge_2x(cutdata, x / 2, y / 2, n);
 		outf << "time taken for enlarging with linear splines: " << t1.elapsed() << endl; // 0.29, 0.55, 0.3, 0.31, 0.51
@@ -486,41 +705,20 @@ void test() {
 	}
 }
 
-void thread_test() {
-	std::string filename = "C:\\Users\\belyn\\uimages\\vincent-van-gogh_road-with-cypresses-1890.jpg";
-	int x, y, n;
-	unsigned char *data = stbi_load(filename.c_str(), &x, &y, &n, 0);
-	cout << x << " " << y << " " << n << endl;
-	uint8_t* dataint = (uint8_t*)data;
-	uint8_t* cutdata = cut2x(data, x, y, n);
-	int width = x / 2;
-	int height = y / 2;
 
-	ofstream outf("parallel_timefile.txt");
-	for (int i = 0; i < 5; ++i) {
-		Timer t1;
-		uint8_t* enlarged_data = enlarge_parallel(cutdata, x / 2, y / 2, n, 1);
-		outf << "time taken for parallel enlarging with linear splines: " << t1.elapsed() << endl; // 0.29, 0.55, 0.3, 0.31, 0.51
-		//stbi_write_jpg("parallel_linear.jpg", x, y, 3, enlarged_data, 100);
-		Timer t2;
-		uint8_t* enlarged_data2 = enlarge_parallel(cutdata, x / 2, y / 2, n, 2);
-		outf << "time taken for parallel enlarging with square splines: " << t2.elapsed() << endl; // 0.29, 0.55, 0.3, 0.31, 0.51
-		//stbi_write_jpg("parallel_square.jpg", x, y, 3, enlarged_data2, 100);
-	}
-}
 
 void count_mistake(string original) {
 	int x, y, n;
-	unsigned char *data = stbi_load(original.c_str(), &x, &y, &n, 0);
+	unsigned char* data = stbi_load(original.c_str(), &x, &y, &n, 0);
 	cout << x << " " << y << " " << n << endl;
 	uint8_t* orig = (uint8_t*)data;
-	
+
 	ofstream outf("outfile.txt");
 	vector<string> files = { "simple_linear.jpg", "simple_square.jpg", "parallel_linear.jpg", "parallel_square.jpg" };
 	for (auto enl : files) {
 		outf << enl << endl;
 		int x1, y1, n1;
-		unsigned char *data1 = stbi_load(enl.c_str(), &x1, &y1, &n1, 0);
+		unsigned char* data1 = stbi_load(enl.c_str(), &x1, &y1, &n1, 0);
 		//cout << x << " " << y << " " << n << endl;
 		uint8_t* enlarged = (uint8_t*)data1;
 		uint8_t* mistake = new uint8_t[x * y * n];
@@ -542,11 +740,11 @@ void count_mistake(string original) {
 		name.insert(8, enl);
 		stbi_write_jpg(name.c_str(), x, y, n, mistake, 100);
 
-		int* string_mistakes = new int[n * x / 30]; // ошибка по первой и второй строкам на 1/10 строки
-		int* row_mistakes = new int[n * x / 60];	// берем только пиксели, которые отсутствовали
+		int* string_mistakes = new int[n * x / 30]; // РѕС€РёР±РєР° РїРѕ РїРµСЂРІРѕР№ Рё РІС‚РѕСЂРѕР№ СЃС‚СЂРѕРєР°Рј РЅР° 1/10 СЃС‚СЂРѕРєРё
+		int* row_mistakes = new int[n * x / 60];	// Р±РµСЂРµРј С‚РѕР»СЊРєРѕ РїРёРєСЃРµР»Рё, РєРѕС‚РѕСЂС‹Рµ РѕС‚СЃСѓС‚СЃС‚РІРѕРІР°Р»Рё
 		for (int channel = 0; channel < n; ++channel) {
-			int i = x * n;	// строка, которая восстанавливалась по столбцам
-			int j = x * n * 2; // строка, в которой восстанавливались столбцы
+			int i = x * n;	// СЃС‚СЂРѕРєР°, РєРѕС‚РѕСЂР°СЏ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°Р»Р°СЃСЊ РїРѕ СЃС‚РѕР»Р±С†Р°Рј
+			int j = x * n * 2; // СЃС‚СЂРѕРєР°, РІ РєРѕС‚РѕСЂРѕР№ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°Р»РёСЃСЊ СЃС‚РѕР»Р±С†С‹
 			int k = 0;
 
 			while (k < x * n / 30) {
@@ -596,10 +794,10 @@ void count_mistake(string original) {
 
 int main()
 {
-	test();
+	//test();
 	thread_test();
-	string original = "vincent-van-gogh_road-with-cypresses-1890.jpg";	
-	//count_mistake(original);
+	//save_pics();
 	
 	return 0;
 }
+
