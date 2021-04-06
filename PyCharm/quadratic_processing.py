@@ -118,9 +118,6 @@ def process_quadratic():
     shared_img_cutted[:] = cut2x(img_ar, n, m, 3)
 
     shared_img = mp.Array('i', n * m * 3)
-    shared_img[:] = img_ar.reshape(-1)
-
-    print(len(shared_img))
 
     p1 = mp.Process(target=linear_parallel_enlarge_threads,
                     args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
@@ -128,9 +125,9 @@ def process_quadratic():
                     args=(shared_img_cutted, n // 2, m // 2, 3, 2, 2, shared_img,))
 
     p1.start()
-    p1.join()
-
     p2.start()
+
+    p1.join()
     p2.join()
 
-    show.show_one(np.array(shared_img_cutted).reshape((n//2, m//2, 3)), 'quadratic_threading')
+    show.show_one(np.array(shared_img).reshape((n, m, 3)), 'quadratic_processing')
