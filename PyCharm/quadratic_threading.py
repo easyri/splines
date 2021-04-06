@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import threading as th
+import multiprocessing as mp
 import numpy as np
 
 import show
@@ -20,39 +20,42 @@ def cut(img: np.array):
     return img1
 
 
-# Изображение, с пропущенными пикселями
-
-img_cutted = cut(img)
-
-
+# # TODO переделать функцию для мультипроцессинга
 # Функция, с заранее известными коэффициентами
 def u(u_j: np.array, u_j1: np.array):
     array = np.abs(0.5 * u_j + 0.5 * u_j1)
     return np.where(array > 255, 255, array)
 
 
+# # TODO Исправить индексы
 #   восстанавливаем строки
-def quadratic_spline_row():
+def quadratic_spline_row(shared):
     for i in range(0, n):
         for j in range(1, m - 1, 2):
-            img_cutted[i][j] = u(img_cutted[i][j - 1], img_cutted[i][j + 1])
+            shared[i][j] = u(shared[i][j - 1], shared[i][j + 1])
 
 
 #   восстанавливаем столбцы
-def quadratic_spline_column():
+def quadratic_spline_column(shared):
     for j in range(0, m):
         for i in range(1, n - 1, 2):
-            img_cutted[i][j] = u(img_cutted[i - 1][j], img_cutted[i + 1][j])
+            shared[i][j] = u(shared[i - 1][j], shared[i + 1][j])
 
 
 def process_quadratic():
-    t1 = th.Thread(target=quadratic_spline_row, args=[])
-    t2 = th.Thread(target=quadratic_spline_column, args=[])
 
-    t1.start()
-    t2.start()
+    shared_array = mp.Array('i', n * m * 3)
+    shared_array[:] = cut(img).reshape(-1)
 
-    t1.join()
-    t2.join()
+    p1 = mp.Process(target=quadratic_spline_row, args=[shared_array, ])
+    p2 = mp.Process(target=quadratic_spline_column, args=[shared_array, ])
 
-    show.show_one(img_cutted, 'quadratic_threading')
+    p1.start()
+    p2.start()
+
+    p1.join()
+    p2.join()
+
+    # # TODO Преобразовать в объект np.array
+    # matrix = np.frombuffer(sharedArray.get_obj()).reshape((n, m))
+    # show.show_one(matrix, 'quadratic_threading')

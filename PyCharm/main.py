@@ -29,3 +29,6 @@ if __name__ == '__main__':
     print("--- %s seconds ---" % (time.time() - start_time))
 
     # # Cubic + threading TODO
+    # start_time = time.time()
+    # PyCharm.cubic_threading.process_cubic()
+    # print("--- %s seconds ---" % (time.time() - start_time))
