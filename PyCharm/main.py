@@ -1,6 +1,6 @@
 import time
 
-import PyCharm.quadratic_threading
+import PyCharm.quadratic_processing
 
 if __name__ == '__main__':
     # img = plt.imread("mandrill.jpg")
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # # Quadratic + threading TODO
     start_time = time.time()
-    PyCharm.quadratic_threading.process_quadratic()
+    PyCharm.quadratic_processing.process_quadratic()
     print("--- %s seconds ---" % (time.time() - start_time))
 
     # # Cubic + threading TODO
