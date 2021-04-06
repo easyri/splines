@@ -114,12 +114,11 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
 
 def process_quadratic():
     shared_img_cutted = mp.Array('i', (n // 2) * (m // 2) * 3)
-    img_ar = np.array(img).reshape(-1)
-    shared_img_cutted = cut2x(img_ar, n, m, 3)
+    img_ar = np.array(img, dtype=np.uint8)
+    shared_img_cutted[:] = cut2x(img_ar, n, m, 3).reshape(-1)
 
     shared_img = mp.Array('i', n * m * 3)
-    _ = np.array(img).reshape(-1)
-    shared_img = _
+    shared_img[:] = img_ar.reshape(-1)
 
     p1 = mp.Process(target=linear_parallel_enlarge_threads,
                     args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
