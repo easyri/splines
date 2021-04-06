@@ -6,18 +6,31 @@ import show
 
 img = plt.imread("../img/mandrill.jpg")
 
-# Ширина и длина
+# Ширина и длина img
 n = img.shape[0]
 m = img.shape[1]
 
 
-def cut(img: np.array):
-    img1 = img.copy()
-    for i in range(n):
-        for j in range(m):
-            if (i % 2 == 0) or (j % 2 == 0):
-                img1[i][j] = 0
-    return img1
+def cut2x(data, x: int, y: int, n: int):
+    width = x // 2
+    height = y // 2
+    cutdata = np.zeros(width * height * n)
+    i = 0
+    j = 0
+    while i < x * y * n:
+        k = 0
+        s = 0
+        while k < x * n:
+            cutdata[j + s] = data[i + k]
+            cutdata[j + s + 1] = data[i + k + 1]
+            cutdata[j + s + 2] = data[i + k + 2]
+            k += 6
+            s += 3
+
+        i += 2 * x * n
+        j += width * n
+
+    return cutdata
 
 
 # Функция, с заранее известными коэффициентами
@@ -26,8 +39,9 @@ def u(u_j: np.array, u_j1: np.array):
 
 
 # TODO
-def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, n: int, part: int, th: int, data: mp.Array):
-    num = height / th
+def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, n: int, part: int, th: int,
+                                    data: mp.Array):
+    num = height // th
     if num % 2 == 1:
         num -= 1
     i = width * n * part * num
@@ -99,23 +113,23 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
 
 
 def process_quadratic():
+    shared_img_cutted = mp.Array('i', (n // 2) * (m // 2) * 3)
+    img_ar = np.array(img).reshape(-1)
+    shared_img_cutted = cut2x(img_ar, n, m, 3)
 
-    shared_img_cutted = mp.Array('d', n * m * 3)
-    shared_img_cutted[:] = cut(img).reshape(-1)
+    shared_img = mp.Array('i', n * m * 3)
+    _ = np.array(img).reshape(-1)
+    shared_img = _
 
-    shared_img = mp.Array('d', n * m * 3)
-    _ = np.array(img.copy())
-    shared_img[:] = _.reshape(-1)
-
-    p1 = mp.Process(target=linear_parallel_enlarge_threads, args=(shared_img_cutted, n, m, 3, 1, 2, shared_img,))
-    p2 = mp.Process(target=linear_parallel_enlarge_threads, args=(shared_img_cutted, n, m, 3, 2, 2, shared_img,))
+    p1 = mp.Process(target=linear_parallel_enlarge_threads,
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
+    p2 = mp.Process(target=linear_parallel_enlarge_threads,
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 2, 2, shared_img,))
 
     p1.start()
-    p2.start()
-
     p1.join()
+
+    p2.start()
     p2.join()
 
-    # # TODO Преобразовать в объект np.array
-    # matrix = np.frombuffer(sharedArray.get_obj()).reshape((n, m))
-    # show.show_one(matrix, 'quadratic_threading')
+    show.show_one(shared_img_cutted.reshape((n//2, m//2, 3)), 'quadratic_threading')

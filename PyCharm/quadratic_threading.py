@@ -46,7 +46,7 @@ def quadratic_spline_column():
                 img_cutted[i][j] = u(img_cutted[i - 1][j], img_cutted[i + 1][j])
 
 
-def process_quadratic():
+def threading_quadratic():
     p1 = th.Thread(target=quadratic_spline_row, args=[])
     p2 = th.Thread(target=quadratic_spline_column, args=[])
 
