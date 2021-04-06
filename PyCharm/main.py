@@ -24,8 +24,8 @@ if __name__ == '__main__':
 
     # #-----Multiprocessing-----
     # # Quadratic spline + processing
-    process_quadratic()
+    process_quadratic(num_process=2)
 
     # # Cubic spline + threading
-    process_cubic()
+    # process_cubic(num_process=2)
     # #~~~~~Multiprocessing~~~~~

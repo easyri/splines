@@ -132,7 +132,7 @@ def third_order_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: 
             i += n
 
 
-def process_cubic():
+def process_cubic(num_process: int):
     shared_img_cutted = mp.Array('i', (n // 2) * (m // 2) * 3)
     img_ar = np.array(img, dtype=np.uint8).reshape(-1)
     shared_img_cutted[:] = cut2x(img_ar, n, m, 3)
@@ -141,25 +141,17 @@ def process_cubic():
 
     # Замеряем только время выполнения процессов!
     start_time = time.time()
-    p1 = mp.Process(target=third_order_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 0, 2, shared_img,))
-    p2 = mp.Process(target=third_order_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
 
-    # p3 = mp.Process(target=linear_parallel_enlarge_threads,
-    #                 args=(shared_img_cutted, n // 2, m // 2, 3, 2, 3, shared_img,))
-    # p4 = mp.Process(target=linear_parallel_enlarge_threads,
-    #                 args=(shared_img_cutted, n // 2, m // 2, 3, 3, 4, shared_img,))
+    proc = []  # list of processes
+    for i in range(num_process):
+        p = mp.Process(target=third_order_parallel_enlarge_threads,
+                       args=(shared_img_cutted, n // 2, m // 2, 3, i, num_process, shared_img,))
 
-    p1.start()
-    p2.start()
-    # p3.start()
-    # p4.start()
+        proc.append(p)
+        p.start()
 
-    p1.join()
-    p2.join()
-    # p3.join()
-    # p4.join()
+    for p in proc:
+        p.join()
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
