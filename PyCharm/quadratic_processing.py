@@ -14,7 +14,7 @@ m = img.shape[1]
 def cut2x(data, x: int, y: int, n: int):
     width = x // 2
     height = y // 2
-    cutdata = np.zeros(width * height * n)
+    cutdata = np.zeros(width * height * n, dtype=np.uint8)
     i = 0
     j = 0
     while i < x * y * n:
@@ -76,14 +76,14 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
                 res = u(data[i + j - n + channel], data[i + j + n + channel])
                 if res > 255:
                     res = 255
-                data[i + j + channel] = res  # int8_t
+                data[i + j + channel] = np.uint8(res)  # int8_t
                 j += n * 2
 
             if j == 2 * width * n - 3:
                 res = u(data[i + j - n + channel], data[i + j - 2 * n + channel])
                 if res > 255:
                     res = 255
-                data[i + j + channel] = res  # int8_t
+                data[i + j + channel] = np.uint8(res)  # int8_t
 
             i += width * 4 * n
 
@@ -100,25 +100,27 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
                 res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j + 1) + channel])
                 if res > 255:
                     res = 255
-                data[i + actual_width * j + channel] = res
+                data[i + actual_width * j + channel] = np.uint8(res)
                 j += 2
 
             if j == end_j:
                 res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j - 2) + channel])
                 if res > 255:
                     res = 255
-                data[i + actual_width * j + channel] = res
+                data[i + actual_width * j + channel] = np.uint8(res)
 
             i += n
 
 
 def process_quadratic():
     shared_img_cutted = mp.Array('i', (n // 2) * (m // 2) * 3)
-    img_ar = np.array(img, dtype=np.uint8)
-    shared_img_cutted[:] = cut2x(img_ar, n, m, 3).reshape(-1)
+    img_ar = np.array(img, dtype=np.uint8).reshape(-1)
+    shared_img_cutted[:] = cut2x(img_ar, n, m, 3)
 
     shared_img = mp.Array('i', n * m * 3)
     shared_img[:] = img_ar.reshape(-1)
+
+    print(len(shared_img))
 
     p1 = mp.Process(target=linear_parallel_enlarge_threads,
                     args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
@@ -131,4 +133,4 @@ def process_quadratic():
     p2.start()
     p2.join()
 
-    show.show_one(shared_img_cutted.reshape((n//2, m//2, 3)), 'quadratic_threading')
+    show.show_one(np.array(shared_img_cutted).reshape((n//2, m//2, 3)), 'quadratic_threading')
