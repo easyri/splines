@@ -120,9 +120,9 @@ def process_quadratic():
     shared_img = mp.Array('i', n * m * 3)
 
     p1 = mp.Process(target=linear_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 0, 2, shared_img,))
     p2 = mp.Process(target=linear_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 2, 2, shared_img,))
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
 
     p1.start()
     p2.start()
