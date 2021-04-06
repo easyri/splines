@@ -73,30 +73,35 @@ float u(float x, float xj, float xj1, float uj, float uj1) {
 	return (uj1 - uj) * (x - xj) / (xj1 - xj) + uj;
 }
 
+// увеличение по 4 потокам
+// cutdata - уменьшенное изображение, width, height - размеры cutdata, n - число каналов, data - восстанавливаемое изображение, part - номер части изображения, восстанавливаемой в потоке
+
 void linear_parallel_enlarge(uint8_t* cutdata, int width, int height,
 	int n, int part, uint8_t* data) {
-
+	// восстанавливаем имеющиеся пиксели
+	// i - начало восстанавливаемой части в маленьком изображении(номер первого пикселя), end_i - конец, j - начало восстанавливаемой части в большом изображении
 	int j = width * height * n * part;
 	int i = width * height * n / 4 * part; // width * height * n / 4, width * height * n / 2, width * height * n * 3 / 4,
 	int end_i = i + width * height * n / 4; // width * height * n / 2, width * height * n * 3 / 4, width * height * n,
 	while (i < end_i) {
 		int k = 0;
 		int s = 0;
-		while (k < width * n) {
+		while (k < width * n) { // идем по строке маленького изображения и копируем
 			data[j + s] = cutdata[i + k];
 			data[j + s + 1] = cutdata[i + k + 1];
 			data[j + s + 2] = cutdata[i + k + 2];
 			k += 3;
 			s += 6;
 		}
-		i += width * n;
-		j += 4 * width * n;
+		i += width * n;  // след строка маленького
+		j += 4 * width * n; // через одну строку большого( ширина строки большого = width*2*n)
 	}
-	for (int channel = 0; channel < n; ++channel) {
-		i = width * height * n * part;
-		end_i = i + width * height * n;
-		while (i < end_i) {
-			int j = n;
+	// восстанавливаем строки
+	for (int channel = 0; channel < n; ++channel) { // для каждого канала цвета
+		i = width * height * n * part; // номер первого пикселя восстанавливаемой части
+		end_i = i + width * height * n; // номер последнего
+		while (i < end_i) { // идем по всей части
+			int j = n; // идем по строке, начиная с первого пикселя
 			while (j < 2 * width * n - 3) {
 				float res = abs(u(j, j - 1, j + 1,
 					data[i + j - n + channel],
@@ -105,7 +110,7 @@ void linear_parallel_enlarge(uint8_t* cutdata, int width, int height,
 				data[i + j + channel] = (uint8_t)(res);
 				j += n * 2;
 			}
-			if (j == 2 * width * n - 3) {
+			if (j == 2 * width * n - 3) { // обработка самого крайнего
 				float res = abs(u(j, j - 1, j - 2,
 					data[i + j - n + channel],
 					data[i + j - 2 * n + channel]));
@@ -113,16 +118,17 @@ void linear_parallel_enlarge(uint8_t* cutdata, int width, int height,
 				data[i + j + channel] = (uint8_t)(res);
 			}
 
-			i += width * 4 * n;
+			i += width * 4 * n; // строка закончилась, перешагнуть через одну
 		}
 	}
+	// восстанавливаем столбцы
 	for (int channel = 0; channel < n; ++channel) {
-		int actual_width = 2 * width * n;
+		int actual_width = 2 * width * n; // реальная длина строки
 		i = 0;
-		while (i <= actual_width - 1) {
-			j = (part * 2) * height / 4 + 1;
+		while (i <= actual_width - 1) { // идем по столбцам
+			j = part * 2 * height / 4 + 1; // номер строки, с которой начинается обрабатываемая часть 
 			//j = 1, 2 * height / 4 + 1, 4 * height / 4 + 1, 6 * height / 4 + 1
-			while (j < (part + 1) * 2 * height / 4 - 1) {
+			while (j < (part + 1) * 2 * height / 4 - 1) { // идем по строкам в столбце до конца части
 				float res = abs(u(j, j - 1, j + 1,
 					data[i + actual_width * (j - 1) + channel],
 					data[i + actual_width * (j + 1) + channel]));
@@ -130,7 +136,7 @@ void linear_parallel_enlarge(uint8_t* cutdata, int width, int height,
 				data[i + actual_width * j + channel] = (uint8_t)(res);
 				j += 2;
 			}
-			if (j == (part + 1) * 2 * height / 4 - 1) {
+			if (j == (part + 1) * 2 * height / 4 - 1) { // крайний индекс
 				float res = abs(u(j, j - 1, j - 2,
 					data[i + actual_width * (j - 1) + channel],
 					data[i + actual_width * (j - 2) + channel]));
@@ -361,9 +367,9 @@ void third_order_parallel_enlarge(uint8_t* cutdata, int width, int height,
 	}
 }
 
-void linear_parallel_enlarge_threads(uint8_t* cutdata, int width, int height,
+void linear_parallel_enlarge_threads(uint8_t* cutdata, int width, int height, // th - колиечство потоков
 	int n, int part, int th, uint8_t* data) {
-	int num = height / th;
+	int num = height / th; // количество строк в каждой части, должно быть четным, чтобы начинать с четных строк(из них вырезались пиксели через 1)
 	if (num % 2 == 1) num -= 1;
 	int i = width * n * part * num; // width * height * n / 4, width * height * n / 2, width * height * n * 3 / 4,
 	int end_i = i + width * n * num; // width * height * n / 2, width * height * n * 3 / 4, width * height * n,
@@ -385,7 +391,7 @@ void linear_parallel_enlarge_threads(uint8_t* cutdata, int width, int height,
 	for (int channel = 0; channel < n; ++channel) {
 		i = width * n * 4 * part * num;
 		end_i = width * n * 4 * (part + 1) * num;
-		if (part == th - 1) end_i = width * height * n * 4;
+		if (part == th - 1) end_i = width * height * n * 4; // в последней части обрабатываем хвост
 
 		while (i < end_i) {
 			int j = n;
