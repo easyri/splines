@@ -23,6 +23,9 @@ if __name__ == '__main__':
     # show.show_one(new_img_cubic, 'cubic')
     # # show(new_img_cubic, img, 'cubic spline image')
 
+    # # Quadratic + threading TODO
     start_time = time.time()
     PyCharm.quadratic_threading.process_quadratic()
     print("--- %s seconds ---" % (time.time() - start_time))
+
+    # # Cubic + threading TODO
