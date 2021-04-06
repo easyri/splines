@@ -20,35 +20,95 @@ def cut(img: np.array):
     return img1
 
 
-# # TODO переделать функцию для мультипроцессинга
 # Функция, с заранее известными коэффициентами
 def u(u_j: np.array, u_j1: np.array):
-    array = np.abs(0.5 * u_j + 0.5 * u_j1)
-    return np.where(array > 255, 255, array)
+    return abs(0.5 * u_j + 0.5 * u_j1)
 
 
-# # TODO Исправить индексы
-#   восстанавливаем строки
-def quadratic_spline_row(shared):
-    for i in range(0, n):
-        for j in range(1, m - 1, 2):
-            shared[i][j] = u(shared[i][j - 1], shared[i][j + 1])
+# TODO
+def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, n: int, part: int, th: int, data: mp.Array):
+    num = height / th
+    if num % 2 == 1:
+        num -= 1
+    i = width * n * part * num
+    end_i = i + width * n * num
 
+    if part == th - 1:
+        end_i = width * height * n
+    j = i * 4
 
-#   восстанавливаем столбцы
-def quadratic_spline_column(shared):
-    for j in range(0, m):
-        for i in range(1, n - 1, 2):
-            shared[i][j] = u(shared[i - 1][j], shared[i + 1][j])
+    while i < end_i:
+        k = 0
+        s = 0
+        while k < width * n:
+            data[j + s] = cutdata[i + k]
+            data[j + s + 1] = cutdata[i + k + 1]
+            data[j + s + 2] = cutdata[i + k + 2]
+            k += 3
+            s += 6
+
+        i += width * n
+        j += 4 * width * n
+
+    for channel in range(n):
+        i = width * n * 4 * part * num
+        end_i = width * n * 4 * (part + 1) * num
+        if part == th - 1:
+            end_i = width * height * n * 4
+
+        while i < end_i:
+            j = n
+            while j < 2 * width * n - 3:
+                res = u(data[i + j - n + channel], data[i + j + n + channel])
+                if res > 255:
+                    res = 255
+                data[i + j + channel] = res  # int8_t
+                j += n * 2
+
+            if j == 2 * width * n - 3:
+                res = u(data[i + j - n + channel], data[i + j - 2 * n + channel])
+                if res > 255:
+                    res = 255
+                data[i + j + channel] = res  # int8_t
+
+            i += width * 4 * n
+
+    for channel in range(n):
+        actual_width = 2 * width * n
+        i = 0
+        while i <= actual_width - 1:
+            j = num * part * 2 + 1
+            end_j = num * 2 * (part + 1) - 1
+            if part == th - 1:
+                end_j = height * 2 - 1
+
+            while j < end_j:
+                res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j + 1) + channel])
+                if res > 255:
+                    res = 255
+                data[i + actual_width * j + channel] = res
+                j += 2
+
+            if j == end_j:
+                res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j - 2) + channel])
+                if res > 255:
+                    res = 255
+                data[i + actual_width * j + channel] = res
+
+            i += n
 
 
 def process_quadratic():
 
-    shared_array = mp.Array('i', n * m * 3)
-    shared_array[:] = cut(img).reshape(-1)
+    shared_img_cutted = mp.Array('d', n * m * 3)
+    shared_img_cutted[:] = cut(img).reshape(-1)
 
-    p1 = mp.Process(target=quadratic_spline_row, args=[shared_array, ])
-    p2 = mp.Process(target=quadratic_spline_column, args=[shared_array, ])
+    shared_img = mp.Array('d', n * m * 3)
+    _ = np.array(img.copy())
+    shared_img[:] = _.reshape(-1)
+
+    p1 = mp.Process(target=linear_parallel_enlarge_threads, args=(shared_img_cutted, n, m, 3, 1, 2, shared_img,))
+    p2 = mp.Process(target=linear_parallel_enlarge_threads, args=(shared_img_cutted, n, m, 3, 2, 2, shared_img,))
 
     p1.start()
     p2.start()
