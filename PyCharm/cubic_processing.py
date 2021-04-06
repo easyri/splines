@@ -34,23 +34,28 @@ def cut2x(data, x: int, y: int, n: int):
     return cutdata
 
 
-# Функция, с заранее известными коэффициентами
-def u(u_j: np.array, u_j1: np.array):
-    return abs(0.5 * u_j + 0.5 * u_j1)
+def u(x, x_j, x_j1, u_j, u_j1):
+    return abs((u_j1 - u_j) * (x - x_j) / (x_j1 - x_j) + u_j)
 
 
-def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, n: int, part: int, th: int,
-                                    data: mp.Array):
+def right_u(u_j, u_j1, u_j2):
+    return abs(u_j * 0.375 + u_j1 * 0.75 - u_j2 * 0.125)
+
+
+def left_u(u_j, u_j1, u_j_1):
+    return abs(u_j * 0.375 + u_j1 * 0.75 - u_j_1 * 0.125)
+
+
+def third_order_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, n: int, part: int, th: int,
+                                         data: mp.Array):
     num = height // th
     if num % 2 == 1:
         num -= 1
     i = width * n * part * num
     end_i = i + width * n * num
-
     if part == th - 1:
         end_i = width * height * n
     j = i * 4
-
     while i < end_i:
         k = 0
         s = 0
@@ -64,47 +69,62 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
         i += width * n
         j += 4 * width * n
 
-    for channel in range(n):
+    for channel in range(3):
         i = width * n * 4 * part * num
         end_i = width * n * 4 * (part + 1) * num
         if part == th - 1:
             end_i = width * height * n * 4
-
         while i < end_i:
             j = n
-            while j < 2 * width * n - 3:
-                res = u(data[i + j - n + channel], data[i + j + n + channel])
+            while j < width * n:
+                res = left_u(data[i + j - n + channel], data[i + j + n + channel], data[i + j + 3 * n + channel])
                 if res > 255:
                     res = 255
-                data[i + j + channel] = np.uint8(res)  # int8_t
+                data[i + j + channel] = np.uint8(res)
+                j += n * 2
+
+            while j < width * 2 * n - 3:
+                res = right_u(data[i + j - n + channel], data[i + j + n + channel], data[i + j - 3 * n + channel])
+                if res > 255:
+                    res = 255
+                data[i + j + channel] = np.uint8(res)
                 j += n * 2
 
             if j == 2 * width * n - 3:
-                res = u(data[i + j - n + channel], data[i + j - 2 * n + channel])
+                res = u(j, j - 1, j - 2, data[i + j - n + channel], data[i + j - 2 * n + channel])
                 if res > 255:
                     res = 255
-                data[i + j + channel] = np.uint8(res)  # int8_t
+                data[i + j + channel] = np.uint8(res)
 
             i += width * 4 * n
 
-    for channel in range(n):
-        actual_width = 2 * width * n
+    for channel in range(3):
+        actual_width = width * n * 2
         i = 0
-        while i <= actual_width - 1:
+        while i < actual_width - 1:
             j = num * part * 2 + 1
             end_j = num * 2 * (part + 1) - 1
             if part == th - 1:
                 end_j = height * 2 - 1
+            while j < num * 2 * (part + 1) / 2:
+                res = left_u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j + 1) + channel],
+                             data[i + actual_width * (j + 3) + channel])
+                if res > 255:
+                    res = 255
+                data[i + actual_width * j + channel] = np.uint8(res)
+                j += 2
 
             while j < end_j:
-                res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j + 1) + channel])
+                res = right_u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j + 1) + channel],
+                              data[i + actual_width * (j - 3) + channel])
                 if res > 255:
                     res = 255
                 data[i + actual_width * j + channel] = np.uint8(res)
                 j += 2
 
             if j == end_j:
-                res = u(data[i + actual_width * (j - 1) + channel], data[i + actual_width * (j - 2) + channel])
+                res = u(j, j - 1, j - 2, data[i + actual_width * (j - 1) + channel],
+                        data[i + actual_width * (j - 2) + channel])
                 if res > 255:
                     res = 255
                 data[i + actual_width * j + channel] = np.uint8(res)
@@ -112,7 +132,7 @@ def linear_parallel_enlarge_threads(cutdata: mp.Array, width: int, height: int, 
             i += n
 
 
-def process_quadratic():
+def process_cubic():
     shared_img_cutted = mp.Array('i', (n // 2) * (m // 2) * 3)
     img_ar = np.array(img, dtype=np.uint8).reshape(-1)
     shared_img_cutted[:] = cut2x(img_ar, n, m, 3)
@@ -121,26 +141,26 @@ def process_quadratic():
 
     # Замеряем только время выполнения процессов!
     start_time = time.time()
-    p1 = mp.Process(target=linear_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 0, 3, shared_img,))
-    p2 = mp.Process(target=linear_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 3, shared_img,))
+    p1 = mp.Process(target=third_order_parallel_enlarge_threads,
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 0, 2, shared_img,))
+    p2 = mp.Process(target=third_order_parallel_enlarge_threads,
+                    args=(shared_img_cutted, n // 2, m // 2, 3, 1, 2, shared_img,))
 
-    p3 = mp.Process(target=linear_parallel_enlarge_threads,
-                    args=(shared_img_cutted, n // 2, m // 2, 3, 2, 3, shared_img,))
+    # p3 = mp.Process(target=linear_parallel_enlarge_threads,
+    #                 args=(shared_img_cutted, n // 2, m // 2, 3, 2, 3, shared_img,))
     # p4 = mp.Process(target=linear_parallel_enlarge_threads,
     #                 args=(shared_img_cutted, n // 2, m // 2, 3, 3, 4, shared_img,))
 
     p1.start()
     p2.start()
-    p3.start()
+    # p3.start()
     # p4.start()
 
     p1.join()
     p2.join()
-    p3.join()
+    # p3.join()
     # p4.join()
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
-    show.show_one(np.array(shared_img).reshape((n, m, 3)), 'quadratic_processing')
+    show.show_one(np.array(shared_img).reshape((n, m, 3)), 'cubic_processing')

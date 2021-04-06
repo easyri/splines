@@ -1,4 +1,6 @@
 import numpy as np
+import time
+from PyCharm.show import show, show_one
 
 
 def right_u_known(u_j: np.array, u_j1: np.array, u_j2: np.array):
@@ -14,6 +16,8 @@ def left_u_known(u_j: np.array, u_j1: np.array, u_j_1: np.array):
 
 
 def cubic_spline(img_array_cutted: np.array, img: np.array):
+    start_time = time.time()
+
     n = img_array_cutted.shape[0]
     m = img_array_cutted.shape[1]
     new_img = np.zeros(img.shape, dtype=np.uint8)
@@ -42,4 +46,6 @@ def cubic_spline(img_array_cutted: np.array, img: np.array):
             else:
                 new_img[i][j] = left_u_known(new_img[i - 1][j], new_img[i + 1][j], new_img[i - 3][j])
 
-    return new_img
+    print("--- %s seconds ---" % (time.time() - start_time))
+    show_one(new_img, 'cubic')
+    show(new_img, img, 'cubic spline')

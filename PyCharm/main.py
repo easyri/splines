@@ -1,34 +1,31 @@
+import matplotlib.pyplot as plt
 import time
+import numpy as np
 
-import PyCharm.quadratic_processing
+import PyCharm.error
+from PyCharm.show import show, show_one
+
+from PyCharm.quadratic_processing import process_quadratic
+from PyCharm.quadratic_spline import quadratic_spline
+
+from PyCharm.cubic_spline import cubic_spline
+from PyCharm.cubic_processing import process_cubic
 
 if __name__ == '__main__':
-    # img = plt.imread("mandrill.jpg")
+    # img = plt.imread("../img/mandrill.jpg")
     # step = 2
     # img_array_cutted = np.array(img[::step, ::step].copy(), dtype=np.uint8)
-    #
-    # # Quadratic
-    # start_time = time.time()
-    # new_img_quadratic = qs.quadratic_spline(img_array_cutted, img)
-    # print("--- %s seconds ---" % (time.time() - start_time))
-    #
-    # show.show_one(new_img_quadratic, 'quadratic')
-    # # show(new_img_quadratic, img, 'quadratic spline image')
-    #
-    # # Cubic
-    # start_time = time.time()
-    # new_img_cubic = cs.cubic_spline(img_array_cutted, img)
-    # print("--- %s seconds ---" % (time.time() - start_time))
-    #
-    # show.show_one(new_img_cubic, 'cubic')
-    # # show(new_img_cubic, img, 'cubic spline image')
 
-    # # Quadratic + threading TODO
-    start_time = time.time()
-    PyCharm.quadratic_processing.process_quadratic()
-    print("--- %s seconds ---" % (time.time() - start_time))
+    # # Quadratic spline
+    # quadratic_spline(img_array_cutted, img)
 
-    # # Cubic + threading TODO
-    # start_time = time.time()
-    # PyCharm.cubic_threading.process_cubic()
-    # print("--- %s seconds ---" % (time.time() - start_time))
+    # #Cubic spline
+    # cubic_spline(img_array_cutted, img)
+
+    # #-----Multiprocessing-----
+    # # Quadratic spline + processing
+    process_quadratic()
+
+    # # Cubic spline + threading
+    process_cubic()
+    # #~~~~~Multiprocessing~~~~~

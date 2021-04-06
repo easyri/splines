@@ -15,4 +15,4 @@ def show(new_img: np.array, img: np.array, name1: str, name2='original image'):
     _ = ax1.imshow(new_img)
     ax2.set_title(name2)
     _ = ax2.imshow(img)
-    plt.savefig('../img/' + name1 + '.jpg')
+    plt.savefig('../img/' + name1 + '_original' + '.jpg')

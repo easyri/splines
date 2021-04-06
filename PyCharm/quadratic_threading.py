@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import multiprocessing as mp
 import threading as th
 import numpy as np
 
@@ -24,14 +23,14 @@ def cut(img: np.array):
 img_cutted = cut(img)
 
 
-# # TODO переделать функцию для мультипроцессинга
+
 # Функция, с заранее известными коэффициентами
 def u(u_j: np.array, u_j1: np.array):
     array = np.abs(0.5 * u_j + 0.5 * u_j1)
     return np.where(array > 255, 255, array)
 
 
-# # TODO Исправить индексы
+
 #   восстанавливаем строки
 def quadratic_spline_row():
         for i in range(0, n):

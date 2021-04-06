@@ -1,4 +1,6 @@
 import numpy as np
+import time
+from PyCharm.show import show, show_one
 
 
 def u_known(u_j: np.array, u_j1: np.array):
@@ -7,6 +9,7 @@ def u_known(u_j: np.array, u_j1: np.array):
 
 
 def quadratic_spline(img_array_cutted: np.array, img: np.array):
+    start_time = time.time()
     n = img_array_cutted.shape[0]
     m = img_array_cutted.shape[1]
     new_img = np.zeros(img.shape, dtype=np.uint8)
@@ -26,4 +29,7 @@ def quadratic_spline(img_array_cutted: np.array, img: np.array):
         for i in range(1, 2 * n - 1, 2):
             new_img[i][j] = u_known(new_img[i - 1][j], new_img[i + 1][j])
 
-    return new_img
+    print("--- %s seconds ---" % (time.time() - start_time))
+    show_one(new_img, 'quadratic')
+    show(new_img, img, 'quadratic spline')
+
