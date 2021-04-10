@@ -28,4 +28,4 @@ if __name__ == '__main__':
     # #~~~~~Multiprocessing~~~~~
 
     # time all functions
-    clocktime()
+    clocktime(proc=20)
