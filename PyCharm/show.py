@@ -1,3 +1,4 @@
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,3 +17,11 @@ def show(new_img: np.array, img: np.array, name1: str, name2='original image'):
     ax2.set_title(name2)
     _ = ax2.imshow(img)
     plt.savefig('../img/' + name1 + '_original' + '.jpg')
+
+
+# Amdal's law
+def amdal(ar: np.array):
+    sns.set_theme(style="whitegrid")
+
+
+    return 0
