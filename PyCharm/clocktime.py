@@ -5,6 +5,8 @@ from PyCharm.cubic_spline import cubic_spline
 from PyCharm.cubic_processing import process_cubic
 
 import timeit
+import numpy as np
+from show import amdal
 
 
 time = min(timeit.Timer(cubic_spline).repeat(repeat=10))
