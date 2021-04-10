@@ -120,7 +120,7 @@ def process_quadratic(num_process: int):
     shared_img = mp.Array('i', n * m * 3)
 
     # Замеряем только время выполнения процессов!
-    start_time = time.time()
+    # start_time = time.time()
 
     proc = []  # list of processes
     for i in range(num_process):
@@ -133,6 +133,6 @@ def process_quadratic(num_process: int):
     for p in proc:
         p.join()
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+    # print("--- %s seconds ---" % (time.time() - start_time))
 
-    show.show_one(np.array(shared_img).reshape((n, m, 3)), 'quadratic_processing')
+    # show.show_one(np.array(shared_img).reshape((n, m, 3)), 'quadratic_processing')
