@@ -1,6 +1,7 @@
 import numpy as np
 import time
 from PyCharm.show import show, show_one
+import matplotlib.pyplot as plt
 
 
 def right_u_known(u_j: np.array, u_j1: np.array, u_j2: np.array):
@@ -15,8 +16,12 @@ def left_u_known(u_j: np.array, u_j1: np.array, u_j_1: np.array):
     return np.where(array > 255, 255, array)
 
 
-def cubic_spline(img_array_cutted: np.array, img: np.array):
-    start_time = time.time()
+def cubic_spline():
+    img = plt.imread("../img/mandrill.jpg")
+    step = 2
+    img_array_cutted = np.array(img[::step, ::step].copy(), dtype=np.uint8)
+
+    # start_time = time.time()
 
     n = img_array_cutted.shape[0]
     m = img_array_cutted.shape[1]
@@ -46,6 +51,6 @@ def cubic_spline(img_array_cutted: np.array, img: np.array):
             else:
                 new_img[i][j] = left_u_known(new_img[i - 1][j], new_img[i + 1][j], new_img[i - 3][j])
 
-    print("--- %s seconds ---" % (time.time() - start_time))
-    show_one(new_img, 'cubic')
-    show(new_img, img, 'cubic spline')
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    # show_one(new_img, 'cubic')
+    # show(new_img, img, 'cubic spline')
