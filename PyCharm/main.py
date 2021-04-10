@@ -12,20 +12,17 @@ from PyCharm.cubic_spline import cubic_spline
 from PyCharm.cubic_processing import process_cubic
 
 if __name__ == '__main__':
-    # img = plt.imread("../img/mandrill.jpg")
-    # step = 2
-    # img_array_cutted = np.array(img[::step, ::step].copy(), dtype=np.uint8)
 
     # # Quadratic spline
-    # quadratic_spline(img_array_cutted, img)
+    quadratic_spline()
 
     # #Cubic spline
-    # cubic_spline(img_array_cutted, img)
+    # cubic_spline()
 
     # #-----Multiprocessing-----
     # # Quadratic spline + processing
-    process_quadratic(num_process=2)
-
-    # # Cubic spline + threading
-    process_cubic(num_process=2)
+    # process_quadratic(num_process=2)
+    #
+    # # # Cubic spline + threading
+    # process_cubic(num_process=2)
     # #~~~~~Multiprocessing~~~~~
