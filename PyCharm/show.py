@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+
 
 def show_one(img: np.array, s: str):
     figsize = 10, 10
@@ -20,19 +20,21 @@ def show(new_img: np.array, img: np.array, name1: str, name2='original image'):
 
 # Amdal's law
 def amdal(ar: np.array, name: str):
+    print(name, " ", ar)
     t1 = ar[0]
     t2 = np.zeros(ar.size)
     k = np.zeros(ar.size)
 
     for i in range(1, t2.size):
-        t2[i] = ar[i] / (i+1)
-        k[i] = t1/t2[i]
+        t2[i] = ar[i] / (i + 1)
+        k[i] = t1 / t2[i]
 
     # show Amdal
-    # data = [[k[i], i] for i in range(1, k.size)]
-    # print(data)
 
-    plt.plot(k, 'o', color='black')
+    x = np.linspace(2, k.size, k.size - 1)
+    # plt.plot(1, t1, 'o', color='red')
+    plt.plot(x, k[1::], 'o', color='black')
+    # plt.plot(t1, 'o', color='red')
     plt.xlabel('N')
     plt.ylabel('K')
 
