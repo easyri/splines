@@ -6,24 +6,24 @@ from PyCharm.cubic_processing import process_cubic
 
 import timeit
 import numpy as np
-from show import amdal
+from show import amdal_time
 
 
 def clocktime(num=1, proc=2):
-    # time_q = np.zeros(proc)
-    # time_quadratic = timeit.timeit(quadratic_spline, number=num) / num
-    # time_quadratic_proc = np.zeros(proc)
-    # for i in range(1, proc):
-    #     time_quadratic_proc[i] = timeit.Timer(lambda: process_quadratic(i + 1)).timeit(number=num) / num
-    # time_q[0] = time_quadratic  # 1 thread script
-    # time_q += time_quadratic_proc  # 2, 3, 4 ... process script
-    # amdal(time_q, 'amdal_qua')
-
-    time_c = np.zeros(proc)
-    time_cubic = timeit.timeit(cubic_spline, number=num) / num
-    time_cubic_proc = np.zeros(proc)
+    time_q = np.zeros(proc)
+    time_quadratic = timeit.timeit(quadratic_spline, number=num) / num
+    time_quadratic_proc = np.zeros(proc)
     for i in range(1, proc):
-        time_cubic_proc[i] = timeit.Timer(lambda: process_cubic(i + 1)).timeit(number=num) / num
-    time_c[0] = time_cubic
-    time_c += time_cubic_proc
-    amdal(time_c, 'amdal_cub')
+        time_quadratic_proc[i] = timeit.Timer(lambda: process_quadratic(i + 1)).timeit(number=num) / num
+    time_q[0] = time_quadratic  # 1 thread script
+    time_q += time_quadratic_proc  # 2, 3, 4 ... process script
+    amdal_time(time_q, 'amdal_time_qua')
+
+    # time_c = np.zeros(proc)
+    # time_cubic = timeit.timeit(cubic_spline, number=num) / num
+    # time_cubic_proc = np.zeros(proc)
+    # for i in range(1, proc):
+    #     time_cubic_proc[i] = timeit.Timer(lambda: process_cubic(i + 1)).timeit(number=num) / num
+    # time_c[0] = time_cubic
+    # time_c += time_cubic_proc
+    # amdal_time(time_c, 'amdal_time_cub')

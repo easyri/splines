@@ -19,7 +19,7 @@ def show(new_img: np.array, img: np.array, name1: str, name2='original image'):
 
 
 # Amdal's law
-def amdal(ar: np.array, name: str):
+def amdal_time(ar: np.array, name: str):
     print(name, " ", ar)
     t1 = ar[0]
     t2 = np.zeros(ar.size)
@@ -30,15 +30,16 @@ def amdal(ar: np.array, name: str):
         k[i] = t1 / t2[i]
 
     # show Amdal
-
     x = np.linspace(2, k.size, k.size - 1)
-    # plt.plot(1, t1, 'o', color='red')
-    plt.plot(x, k[1::], 'o', color='black')
-    # plt.plot(t1, 'o', color='red')
-    plt.xlabel('N')
-    plt.ylabel('K')
+    plt.plot(x, k[1::], 'o', color='blue')
 
+    # show Time
+    x = np.linspace(1, ar.size, ar.size)
+    plt.plot(x, ar, 'o', color='red')
+
+    plt.xlabel('N')
+    plt.ylabel('K=Blue, Time=Red')
     plt.savefig('../img/' + name + '.jpg')
-    # plt.show()
+
 
     return 0
